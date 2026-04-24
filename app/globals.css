@@ -1,0 +1,300 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   Theme tokens — light + dark
+   ============================================ */
+
+:root {
+  /* Light mode (default) */
+  --bg: 247 246 241;          /* bone */
+  --surface: 255 254 251;      /* paper */
+  --elevated: 255 255 255;
+  --border: 20 20 25;          /* used at 0.08 alpha */
+  --fg: 18 20 26;              /* deep ink */
+  --muted: 55 60 75;
+  --subtle: 110 115 130;
+  --accent: 0 119 130;          /* deep teal */
+  --accent2: 201 88 33;         /* rust */
+  --shadow: 0 0 0;
+  --grid: 20 20 25;
+}
+
+.dark {
+  --bg: 9 11 16;                /* obsidian */
+  --surface: 15 18 24;
+  --elevated: 22 26 34;
+  --border: 255 255 255;        /* at 0.10 alpha */
+  --fg: 240 244 250;
+  --muted: 170 180 195;
+  --subtle: 115 125 142;
+  --accent: 64 224 208;          /* electric teal */
+  --accent2: 255 179 71;         /* warm amber */
+  --shadow: 0 0 0;
+  --grid: 255 255 255;
+}
+
+/* ============================================
+   Base
+   ============================================ */
+*,
+*::before,
+*::after {
+  border-color: rgb(var(--border) / 0.1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-feature-settings: "ss01", "cv11";
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.3);
+  color: rgb(var(--fg));
+}
+
+/* ============================================
+   Utilities
+   ============================================ */
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgb(var(--grid) / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--grid) / 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
+.bg-dots {
+  background-image: radial-gradient(circle at 1px 1px, rgb(var(--grid) / 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.glass {
+  background: linear-gradient(
+    180deg,
+    rgb(var(--elevated) / 0.7),
+    rgb(var(--elevated) / 0.5)
+  );
+  border: 1px solid rgb(var(--border) / 0.1);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.dark .glass {
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.04),
+    rgb(255 255 255 / 0.02)
+  );
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.5;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.aurora-1 {
+  background: rgb(var(--accent));
+  animation: aurora-drift 14s ease-in-out infinite;
+}
+
+.aurora-2 {
+  background: rgb(var(--accent2));
+  animation: aurora-drift 18s ease-in-out infinite reverse;
+}
+
+.dark .aurora {
+  opacity: 0.25;
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(var(--accent) / 0.35);
+}
+
+.shimmer-bar {
+  position: relative;
+  overflow: hidden;
+  background-color: rgb(var(--accent) / 0.15);
+}
+
+.shimmer-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--accent)) 50%,
+    transparent
+  );
+  animation: shimmer-slide 1.4s linear infinite;
+}
+
+@keyframes shimmer-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.font-tech {
+  font-family: var(--font-mono);
+  font-feature-settings: "ss01", "ss02", "zero";
+  letter-spacing: -0.02em;
+}
+
+.text-gradient {
+  background: linear-gradient(
+    120deg,
+    rgb(var(--fg)),
+    rgb(var(--accent))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.08);
+  border-radius: 10px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.14);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+@media print {
+  .no-print { display: none !important; }
+}
+
+/* ============================================
+   Eye logo — flowing gradient (light) / black (dark)
+   ============================================ */
+
+/* Rotating gradient disk — light mode only */
+.eye-logo-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 0deg,
+    rgb(var(--accent)),
+    rgb(var(--accent2)),
+    rgb(var(--accent)),
+    rgb(var(--accent2)),
+    rgb(var(--accent))
+  );
+  filter: saturate(1.3) brightness(1.1);
+  animation: eye-logo-spin 6s linear infinite;
+}
+
+/* Glossy highlight — light mode only */
+.eye-logo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgb(255 255 255 / 0.45),
+    transparent 55%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+
+
+@keyframes eye-logo-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eye-logo-bg { animation: none; }
+}
+
+/* ============================================
+   Shimmer text (for "Or use the full form")
+   ============================================ */
+
+@keyframes shimmer-text {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.animate-shimmer-text {
+  animation: shimmer-text 3.5s linear infinite;
+}
+
+@media print {
+  .no-print,
+  header,
+  footer,
+  nav,
+  [class*="aurora"],
+  [class*="noise"],
+  [class*="bg-grid"] {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .glass {
+    background: white !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .aurora {
+    display: none !important;
+  }
+}
