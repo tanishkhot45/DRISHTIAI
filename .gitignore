@@ -38,3 +38,4 @@ yarn-error.log*
 
 # Drishti — generated embeddings (can be large, regenerate locally)
 /data/embeddings.json
+.env.local

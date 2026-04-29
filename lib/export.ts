@@ -821,6 +821,208 @@ y += 5;
   doc.save(`drishti-comparison-${timestamp()}.pdf`);
 }
 
+
+/* ===========================================================
+   PDF — Project BOM export
+   =========================================================== */
+
+import type { Project, ProjectComponent } from "@/lib/projects-types";
+
+export function exportProjectPdf(project: Project) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const contentWidth = pageWidth - MARGIN.left - MARGIN.right;
+
+  const title = "Project material BOM";
+  const subtitle = project.name + (project.description ? ` — ${project.description}` : "");
+
+  const onNewPage = () => pdfHeader(doc, title, subtitle);
+  let y = pdfHeader(doc, title, subtitle);
+
+  /* ---- Project summary ---- */
+  const total = project.components.length;
+  const done = project.components.filter((c) => c.result).length;
+  const totalUnits = project.components.reduce(
+    (sum, c) => sum + (c.quantity || 1),
+    0
+  );
+
+  y = sectionHeading(doc, y, "Project summary", onNewPage);
+
+  const summaryRows: [string, string][] = [
+    ["Components", `${total}`],
+    ["Total units", `${totalUnits}`],
+    ["Selections complete", `${done}/${total}`],
+    ["Domain", pdfSafe(String(project.defaults.domain || "—"))],
+    ["Environment", pdfSafe(String(project.defaults.environment || "—"))],
+    ["Service", pdfSafe(String(project.defaults.serviceMedium || "—"))],
+    ["Temperature", project.defaults.minTempC != null && project.defaults.maxTempC != null
+      ? `${project.defaults.minTempC}°C to ${project.defaults.maxTempC}°C`
+      : "—"],
+    ["Design life", pdfSafe(String(project.defaults.designLife || "—"))],
+  ];
+
+  autoTable(doc, {
+    startY: y,
+    theme: "plain",
+    body: summaryRows,
+    styles: {
+      fontSize: 9,
+      cellPadding: { top: 1.5, bottom: 1.5, left: 0, right: 2 },
+    },
+    columnStyles: {
+      0: { textColor: BRAND.subtle, cellWidth: 55 },
+      1: { textColor: BRAND.fg },
+    },
+    margin: { left: MARGIN.left, right: MARGIN.right },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 10;
+
+  /* ---- BOM table ---- */
+  y = sectionHeading(doc, y, "Bill of materials", onNewPage);
+
+  const bomRows = project.components.map((c, i) => {
+    const pick = c.result?.recommendations?.[0];
+    return [
+      `${i + 1}`,
+      pdfSafe(c.name),
+      c.quantity ? `${c.quantity}` : "1",
+      pick ? pdfSafe(pick.name) : "—",
+      pick ? pdfSafe(pick.astm) : "—",
+      pick ? `${Math.round(pick.score)}` : "—",
+      pick?.astmCompliant === undefined
+        ? "—"
+        : pick.astmCompliant
+        ? "Yes"
+        : "Verify",
+    ];
+  });
+
+  autoTable(doc, {
+    startY: y,
+    head: [["#", "Component", "Qty", "Material", "Standard", "Score", "ASTM"]],
+    body: bomRows,
+    theme: "grid",
+    headStyles: {
+      fillColor: BRAND.fg,
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: "bold",
+      cellPadding: 2.5,
+    },
+    styles: {
+      fontSize: 8.5,
+      cellPadding: 2.5,
+      textColor: BRAND.fg,
+      overflow: "linebreak",
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: "center" },
+      1: { cellWidth: 50, fontStyle: "bold" },
+      2: { cellWidth: 12, halign: "center" },
+      3: { cellWidth: 50 },
+      4: { cellWidth: 30 },
+      5: {
+        cellWidth: 15,
+        halign: "center",
+        fontStyle: "bold",
+        textColor: BRAND.accent,
+      },
+      6: { cellWidth: 15, halign: "center" },
+    },
+    alternateRowStyles: { fillColor: BRAND.bgSoft },
+    margin: { left: MARGIN.left, right: MARGIN.right },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 10;
+
+  /* ---- Per-component rationale ---- */
+  const withResults = project.components.filter((c) => c.result);
+  if (withResults.length > 0) {
+    y = sectionHeading(doc, y, "Rationale per component", onNewPage);
+
+    withResults.forEach((c, i) => {
+      const pick = c.result!.recommendations[0];
+      if (!pick) return;
+
+      const pageHeight = doc.internal.pageSize.getHeight();
+      if (y + 25 > pageHeight - MARGIN.bottom) {
+        doc.addPage();
+        y = onNewPage();
+        y = sectionHeading(doc, y, "Rationale per component (cont.)", onNewPage);
+      }
+
+      // Component title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...BRAND.fg);
+      doc.text(`${i + 1}. ${pdfSafe(c.name)}`, MARGIN.left, y);
+      y += 4.5;
+
+      // Material + score
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...BRAND.subtle);
+      doc.text(
+        `${pdfSafe(pick.name)} — ${pdfSafe(pick.astm)} — Score ${Math.round(pick.score)}/100`,
+        MARGIN.left + 4,
+        y
+      );
+      y += 5;
+
+      // Reasoning (or fallback to keyReasons)
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...BRAND.muted);
+
+      const prose = pick.reasoning || (pick.keyReasons || []).join(" ");
+      if (prose) {
+        y = writeParagraphs(
+          doc,
+          prose.split(/\n\n+/).filter(Boolean),
+          y,
+          contentWidth,
+          4,
+          onNewPage,
+          "Rationale per component"
+        );
+      }
+      y += 3;
+    });
+  }
+
+  /* ---- Decision record ---- */
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (y + 55 > pageHeight - MARGIN.bottom) {
+    doc.addPage();
+    y = onNewPage();
+  }
+  y = sectionHeading(doc, y, "Decision record", onNewPage);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...BRAND.subtle);
+  doc.text("Selected by", MARGIN.left, y);
+  doc.text("Reviewed by", pageWidth / 2 + 4, y);
+
+  doc.setDrawColor(...BRAND.rule);
+  doc.setLineWidth(0.4);
+  doc.line(MARGIN.left, y + 18, pageWidth / 2 - 10, y + 18);
+  doc.line(pageWidth / 2 + 4, y + 18, pageWidth - MARGIN.right, y + 18);
+
+  doc.setFontSize(7);
+  doc.text("Signature & date", MARGIN.left, y + 22);
+  doc.text("Signature & date", pageWidth / 2 + 4, y + 22);
+
+  pdfFooter(doc);
+
+  const safeName = project.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  doc.save(`drishti-project-${safeName}-${timestamp()}.pdf`);
+}
 /* ===========================================================
    Helper
    =========================================================== */
