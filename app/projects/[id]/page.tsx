@@ -654,42 +654,40 @@ function buildComponentSelectionInput(
   ])
     .filter(Boolean)
     .join(" · ");
+return {
+  ...defaults,
+  ...overrides,
 
-  const baseDefaults: SetupInput = {
-    domain: "Oil & Gas",
-    environment: "Unknown",
-    componentType: "Other",
-    criticality: "Medium",
-    operatingMode: "Continuous",
-    minTempC: 20,
-    maxTempC: 60,
-    designPressureBar: null,
-    designPressureUnknown: true,
-    designLife: "10–25",
-    serviceMedium: "Unknown",
-    exposureDrivers: [],
-  };
+  // Required fallbacks
+  domain: overrides.domain ?? defaults.domain ?? "Oil & Gas",
+  environment: overrides.environment ?? defaults.environment ?? "Unknown",
+  componentType:
+    overrides.componentType ?? profile.componentType ?? defaults.componentType ?? "Other",
+  criticality:
+    overrides.criticality ?? profile.criticality ?? defaults.criticality ?? "Medium",
+  operatingMode:
+    overrides.operatingMode ??
+    profile.operatingMode ??
+    defaults.operatingMode ??
+    "Continuous",
 
-  const inferred = {
-    componentType: profile.componentType,
-    criticality: profile.criticality,
-    operatingMode: profile.operatingMode,
-    serviceMedium: profile.serviceMedium ?? defaults.serviceMedium ?? "Unknown",
-    designPressureBar,
-    designPressureUnknown: designPressureBar === null,
-    exposureDrivers,
-    notes,
-  };
+  minTempC: overrides.minTempC ?? defaults.minTempC ?? 20,
+  maxTempC: overrides.maxTempC ?? defaults.maxTempC ?? 60,
+  designLife: overrides.designLife ?? defaults.designLife ?? "10–25",
 
-  return {
-    ...baseDefaults,
-    ...(defaults as SetupInput),
-    ...inferred,
-    ...(overrides as SetupInput),
-    // Always use our merged drivers/notes, not the override's raw ones
-    exposureDrivers,
-    notes,
-  } as SetupInput;
+  serviceMedium:
+    overrides.serviceMedium ??
+    profile.serviceMedium ??
+    defaults.serviceMedium ??
+    "Unknown",
+
+  designPressureBar,
+  designPressureUnknown: designPressureBar === null,
+
+  // Always use our merged drivers/notes, not raw override values
+  exposureDrivers,
+  notes,
+} as SetupInput;
 }
 
 function inferComponentProfile(cmp: ProjectComponent): ComponentProfile {
