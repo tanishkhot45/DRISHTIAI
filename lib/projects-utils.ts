@@ -11,7 +11,9 @@ export function uid(prefix = "") {
 export function fileTimestamp() {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(
+    d.getDate()
+  )}-${pad(d.getHours())}${pad(d.getMinutes())}`;
 }
 
 /**
@@ -33,27 +35,34 @@ export function parseComponentPaste(raw: string): Array<{
     .filter(Boolean)
     .filter((l) => !l.startsWith("#"));
 
-  return rows
-    .map((line) => {
-      // Split on commas but not inside quotes
-      const cells = line.match(/("([^"]*)"|[^,]+)/g)?.map((c) =>
+  return rows.flatMap((line) => {
+    // Split on commas but not inside quotes
+    const cells =
+      line.match(/("([^"]*)"|[^,]+)/g)?.map((c) =>
         c.replace(/^"|"$/g, "").trim()
       ) ?? [line];
 
-      const [nameRaw, qtyRaw, ...rest] = cells;
-      if (!nameRaw) return null;
+    const [nameRaw, qtyRaw, ...rest] = cells;
+    const name = nameRaw?.trim();
 
-      const quantityFromRaw = qtyRaw ? parseInt(qtyRaw, 10) : NaN;
-      const quantity = Number.isFinite(quantityFromRaw) ? quantityFromRaw : undefined;
-      const notes = rest.length ? rest.join(", ").trim() : undefined;
+    if (!name) return [];
 
-      return {
-        name: nameRaw,
-        quantity,
-        notes: notes || undefined,
-      };
-    })
-    .filter((x): x is { name: string; quantity?: number; notes?: string } => !!x);
+    const quantityFromRaw = qtyRaw ? parseInt(qtyRaw, 10) : NaN;
+    const quantity =
+      Number.isFinite(quantityFromRaw) && quantityFromRaw > 0
+        ? quantityFromRaw
+        : undefined;
+
+    const notes = rest.length ? rest.join(", ").trim() : undefined;
+
+    return [
+      {
+        name,
+        ...(quantity !== undefined ? { quantity } : {}),
+        ...(notes ? { notes } : {}),
+      },
+    ];
+  });
 }
 
 /**
@@ -137,8 +146,21 @@ export function detectPairs(components: ProjectComponent[]): ComponentPair[] {
 // ---------------- helpers ----------------
 
 const STOP_TOKENS = new Set([
-  "the", "a", "an", "of", "for", "and", "or", "to", "with", "in", "on",
-  "at", "by", "from", "as",
+  "the",
+  "a",
+  "an",
+  "of",
+  "for",
+  "and",
+  "or",
+  "to",
+  "with",
+  "in",
+  "on",
+  "at",
+  "by",
+  "from",
+  "as",
 ]);
 
 function tokenize(s: string): Set<string> {

@@ -127,46 +127,46 @@ export const useProjectsStore = create<State>()(
       getProject: (id) => get().projects.find((p) => p.id === id),
 
       addComponents: (projectId, items) => {
-        const created: ProjectComponent[] = items
-          .map((it) => {
-            const name = it.name.trim();
-            if (!name) return null;
+  const created: ProjectComponent[] = items.flatMap((it) => {
+    const name = it.name.trim();
+    if (!name) return [];
 
-            const quantity =
-              typeof it.quantity === "number" &&
-              Number.isFinite(it.quantity) &&
-              it.quantity > 0
-                ? Math.floor(it.quantity)
-                : undefined;
+    const quantity =
+      typeof it.quantity === "number" &&
+      Number.isFinite(it.quantity) &&
+      it.quantity > 0
+        ? Math.floor(it.quantity)
+        : undefined;
 
-            return {
-              id: uid("cmp"),
-              name,
-              quantity,
-              notes: it.notes?.trim() || undefined,
-              conditions: it.conditions,
-              result: null,
-            } satisfies ProjectComponent;
-          })
-          .filter((c): c is ProjectComponent => c !== null);
+    return [
+      {
+        id: uid("cmp"),
+        name,
+        quantity,
+        notes: it.notes?.trim() || undefined,
+        conditions: it.conditions,
+        result: null,
+      } satisfies ProjectComponent,
+    ];
+  });
 
-        if (created.length === 0) return [];
+  if (created.length === 0) return [];
 
-        set({
-          projects: get().projects.map((p) => {
-            if (p.id !== projectId) return p;
-            const nextComponents = [...p.components, ...created];
-            return touch({
-              ...p,
-              components: nextComponents,
-              pairs: safeDetectPairs(nextComponents),
-              analysis: null,
-            });
-          }),
-        });
+  set({
+    projects: get().projects.map((p) => {
+      if (p.id !== projectId) return p;
+      const nextComponents = [...p.components, ...created];
+      return touch({
+        ...p,
+        components: nextComponents,
+        pairs: safeDetectPairs(nextComponents),
+        analysis: null,
+      });
+    }),
+  });
 
-        return created;
-      },
+  return created;
+},
 
       updateComponent: (projectId, componentId, patch) => {
         set({
