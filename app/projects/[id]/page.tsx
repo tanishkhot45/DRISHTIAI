@@ -670,19 +670,26 @@ function buildComponentSelectionInput(
     exposureDrivers: [],
   };
 
-  return {
-    ...baseDefaults,
-    ...(defaults as SetupInput),
+  const inferred = {
     componentType: profile.componentType,
     criticality: profile.criticality,
     operatingMode: profile.operatingMode,
     serviceMedium: profile.serviceMedium ?? defaults.serviceMedium ?? "Unknown",
     designPressureBar,
     designPressureUnknown: designPressureBar === null,
-    ...(overrides as SetupInput),
     exposureDrivers,
     notes,
   };
+
+  return {
+    ...baseDefaults,
+    ...(defaults as SetupInput),
+    ...inferred,
+    ...(overrides as SetupInput),
+    // Always use our merged drivers/notes, not the override's raw ones
+    exposureDrivers,
+    notes,
+  } as SetupInput;
 }
 
 function inferComponentProfile(cmp: ProjectComponent): ComponentProfile {
