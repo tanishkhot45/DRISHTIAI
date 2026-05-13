@@ -7,6 +7,7 @@
    ============================================ */
 
 :root {
+  color-scheme: light;
   /* Light mode (default) */
   --bg: 247 246 241;          /* bone */
   --surface: 255 254 251;      /* paper */
@@ -22,6 +23,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --bg: 9 11 16;                /* obsidian */
   --surface: 15 18 24;
   --elevated: 22 26 34;
@@ -193,6 +195,14 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* Native <select> dropdown panel — dark-mode fallback for Windows.
+   color-scheme above handles this in modern browsers; explicit option
+   colors make sure older Chromium builds on Windows render correctly too. */
+.dark select option {
+  background-color: rgb(var(--elevated));
+  color: rgb(var(--fg));
 }
 
 .noise {

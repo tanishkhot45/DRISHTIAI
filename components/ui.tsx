@@ -105,15 +105,17 @@ export const Textarea = React.forwardRef<
 /* =====================================================
    Select
    ===================================================== */
-export function Select(
-  props: React.SelectHTMLAttributes<HTMLSelectElement> & {
+export const Select = React.forwardRef<
+  HTMLSelectElement,
+  React.SelectHTMLAttributes<HTMLSelectElement> & {
     wrapperClassName?: string;
   }
-) {
+>(function Select(props, ref) {
   const { className, wrapperClassName, children, ...rest } = props;
   return (
     <div className={cn("relative mt-1.5", wrapperClassName)}>
       <select
+        ref={ref}
         {...rest}
         className={cn(
           "focus-ring w-full appearance-none rounded-xl border border-fg/10 bg-fg/[0.02] px-3.5 py-2.5 pr-10 text-sm text-fg",
@@ -126,7 +128,7 @@ export function Select(
       <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
     </div>
   );
-}
+});
 
 /* =====================================================
    Button
